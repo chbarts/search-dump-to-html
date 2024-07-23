@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+
+if [[ $# -eq 0 ]]; then
+    echo "usage: $0 search-dump.json > search-dump.html"
+    echo "Convert a search dump in Google Takeout format JSON into HTML"
+    exit 0
+fi
+
+jq -r '.event[] | [.query.id[].timestamp_usec, .query.query_text] | @tsv' < "$@" | awk -F'\t' 'function escapeName(name) { gsub(/&/, "\\&amp;", name); gsub(/</, "\\&lt;", name); gsub(/>/, "\\&gt;", name); return name; } BEGIN { print "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Search Queries</title></head><body><table border=\"1\"><tr><th>Time(s)</th><th>Query</th></tr>" } { printf("<tr><td>"); for (i = 1; i < NF; i++) { printf("%s", strftime("%a %b %e %H:%M:%S %Z %Y", $i/1000000)); if (i < NF - 1) { printf(", "); } } printf("</td>"); printf("<td>%s</td>", escapeName($NF)); print "</tr>" } END { print "</table></body></html>" }'
